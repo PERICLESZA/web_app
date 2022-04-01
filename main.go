@@ -7,10 +7,12 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 //globals variables
 var client *redis.Client
+var store = sessions.NewCookieStore([]byte("t0p-s3cr3t"))
 var templates *template.Template
 
 func main() {
@@ -21,6 +23,9 @@ func main() {
 	r.HandleFunc("/about", aboutHandler).Methods("GET")
 	r.HandleFunc("/", indexGetHandler).Methods("GET")
 	r.HandleFunc("/", indexPostHandler).Methods("POST")
+	r.HandleFunc("/login", loginGetHandler).Methods("GET")
+	r.HandleFunc("/login", loginPostHandler).Methods("POST")
+	r.HandleFunc("/test", testGetHandler).Methods("GET")
 	fs := http.FileServer(http.Dir("./static/"))
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 	http.Handle("/", r)
@@ -45,6 +50,38 @@ func indexPostHandler(w http.ResponseWriter, r *http.Request) {
 	client.LPush(client.Context(), "comments", comment)
 	//redirect to / when the submit form
 	http.Redirect(w, r, "/", 302)
+}
+
+func loginGetHandler(w http.ResponseWriter, r *http.Request) {
+	templates.ExecuteTemplate(w, "login.html", nil)
+}
+
+func loginPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.PostForm.Get("username")
+	session, _ := store.Get(r, "session")
+	session.Values["username"] = username
+	session.Save(r, w)
+}
+
+func testGetHandler(w http.ResponseWriter, r *http.Request) {
+	// grab the session
+	session, _ := store.Get(r, "session")
+	// grab the username from the session object
+	untyped, ok := session.Values["username"]
+	// Verify that the username was actually there
+	if !ok {
+		return
+	}
+	// quick type assertion because the object store the data as
+	// empty interface
+	username, ok := untyped.(string)
+	if !ok {
+		return
+	}
+	// if pass in all these tests, write a
+	// byte array with the username
+	w.Write([]byte(username))
 }
 
 //request contact page handle
