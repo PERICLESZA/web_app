@@ -21,6 +21,8 @@ func main() {
 	r.HandleFunc("/about", aboutHandler).Methods("GET")
 	r.HandleFunc("/", indexGetHandler).Methods("GET")
 	r.HandleFunc("/", indexPostHandler).Methods("POST")
+	fs := http.FileServer(http.Dir("./static/"))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8001", nil))
 }
