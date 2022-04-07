@@ -3,9 +3,10 @@ package main
 import (
 	"net/http"
 
+	"./utils"
+
 	"./models"
 	"./routes"
-	"./utils"
 )
 
 func main() {
